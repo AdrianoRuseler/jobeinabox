@@ -1,0 +1,9 @@
+version: '3'
+name: jobeinabox
+services:
+  webserver:
+    build:
+        context: .
+        dockerfile: Dockerfile
+    ports:
+      - '4000:80'
