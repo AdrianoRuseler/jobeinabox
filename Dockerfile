@@ -2,7 +2,7 @@
 # With thanks to David Bowes (d.h.bowes@lancaster.ac.uk) who did all the hard work
 # on this originally.
 
-FROM docker.io/ubuntu:22.04
+FROM docker.io/ubuntu:24.04
 
 # https://github.com/opencontainers/image-spec/blob/master/annotations.md
 LABEL \
@@ -14,12 +14,12 @@ LABEL \
 
 ARG TZ=America/Sao_Paulo
 # Set up the (apache) environment variables
-ENV APACHE_RUN_USER www-data
-ENV APACHE_RUN_GROUP www-data
-ENV APACHE_LOG_DIR /var/log/apache2
-ENV APACHE_LOCK_DIR /var/lock/apache2
-ENV APACHE_PID_FILE /var/run/apache2.pid
-ENV LANG C.UTF-8
+ENV APACHE_RUN_USER=www-data
+ENV APACHE_RUN_GROUP=www-data
+ENV APACHE_LOG_DIR=/var/log/apache2
+ENV APACHE_LOCK_DIR=/var/lock/apache2
+ENV APACHE_PID_FILE=/var/run/apache2.pid
+ENV LANG=C.UTF-8
 
 # Copy apache virtual host file for later use
 COPY 000-jobe.conf /
@@ -54,11 +54,11 @@ RUN ln -snf /usr/share/zoneinfo/"$TZ" /etc/localtime && \
         python3 \
         python3-pip \
         python3-setuptools \
+        pylint \
         sqlite3 \
         sudo \
         tzdata \
         unzip && \
-    python3 -m pip install pylint && \
     pylint --reports=no --score=n --generate-rcfile > /etc/pylintrc && \
     ln -sf /proc/self/fd/1 /var/log/apache2/access.log && \
     ln -sf /proc/self/fd/1 /var/log/apache2/error.log && \
@@ -83,8 +83,11 @@ RUN ln -snf /usr/share/zoneinfo/"$TZ" /etc/localtime && \
 # Expose apache
 EXPOSE 80
 
-# Healthcheck, minimaltest.py should complete within 2 seconds
-HEALTHCHECK --interval=5m --timeout=2s \
+# Healthcheck every minute, minimaltest.py should complete within 2 seconds
+# If you're running docker version 25.0 or later, you could consider
+# changing the following line to
+# HEALTHCHECK --start-period=30s --start-interval=5s --interval=5m --timeout=2s \
+HEALTHCHECK --interval=1m --timeout=2s \
     CMD /usr/bin/python3 /var/www/html/jobe/minimaltest.py || exit 1
 
 # Start apache
