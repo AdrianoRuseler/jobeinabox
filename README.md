@@ -27,6 +27,10 @@ of the form
 docker build -t ruseler/jobeinabox .
 ```
 
+```bash
+docker build -t ruseler/jobeinabox:trixie-slim .
+```
+
 resolute
 [["c","15.2.0"],["cpp","15.2.0"],["java","25.0.2"],["nodejs","22.22.0"],["octave","10.3.0"],["pascal","3.2.2"],["php","8.4.11"],["python3","3.13.12"]]
 
@@ -53,11 +57,15 @@ By default, Jobe will run up to 8 jobs simultaneously. This is usually a suitabl
 value for 8-core systems but if you have more cores available you will probably
 want to raise this number. To do so, exec a shell in the container with a command of the form
 
-    docker exec -it jobe bash
+```bash
+docker exec -it jobeinabox bash
+```
 
  and then:
 
-    nano  /var/www/html/jobe/app/Config/Jobe.php
+```bash
+nano  /var/www/html/jobe/app/Config/Jobe.php
+```
 
 Find the line
 
@@ -75,7 +83,9 @@ Then re-install Jobe (within the container) with the commands:
 
 You can check the performance of the container with the command
 
-    docker exec -it jobe /var/www/html/jobe/testsubmit.py --perf
+```bash
+docker exec -it jobeinabox /var/www/html/jobe/testsubmit.py --perf
+```
 
 ## Using API Keys
 
@@ -94,10 +104,6 @@ With the following command the keys stored in a file called `api_keys` in the
 jobeinabox directory are automatically added to `/var/www/html/jobe/app/Config/Jobe.php`
 and the option `$require_api_keys` is set to true.
 
-```
-podman build . -t my/jobeinabox --secret id=api_keys,src=api_keys
-```
-
 If no API keys are provided the configuration remains untouched.
 
 ### Warnings:
@@ -110,15 +116,20 @@ If no API keys are provided the configuration remains untouched.
 Having started a jobeinabox container by either of the above methods, you
 can check it's running OK by browsing to
 
-     http://[host_running_docker]:4000/jobe/index.php/restapi/languages
+- http://[host_running_docker]:4000/jobe/index.php/restapi/languages
 
 and you should get a JSON-encoded list of the supported languages, namely
 
-    [["c","7.3.0"],["cpp","7.3.0"],["java","10.0.2"],["nodejs","8.10.0"],["octave","4.2.2"],["pascal","3.0.4"],["php","7.2.7"],["python3","3.6.5"]]
+FROM debian:trixie-slim
+```json
+[["c","14.2.0"],["cpp","14.2.0"],["java","21.0.10"],["nodejs","20.19.2"],["octave","9.4.0"],["pascal","3.2.2"],["php","8.4.16"],["python3","3.13.5"]]
+```
 
 If you wish to run the test suite within the container, use the command
 
-    sudo docker exec -t jobe /usr/bin/python3 /var/www/html/jobe/testsubmit.py
+```bash
+docker exec -t jobeinabox /usr/bin/python3 /var/www/html/jobe/testsubmit.py
+```
 
 To set your Moodle/CodeRunner plugin to use this dockerised Jobe server, set the Jobe server field in the CodeRunner admin settings (Site Administration > Plugins > Question types > CodeRunner) to
 
@@ -128,11 +139,11 @@ Do not put http:// at the start.
 
 To stop the running server, enter the command:
 
-    sudo docker stop jobe
+    sudo docker stop jobeinabox
 
 To remove the running server, enter the command:
 
-    sudo docker rm jobe
+    sudo docker rm jobeinabox
 
 To check if there is anything left, enter the command
 
