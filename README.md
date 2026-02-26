@@ -23,7 +23,13 @@ For production use you should build your own image using the local timezone. In 
 Pull [this repo from Github](https://github.com/trampgeek/jobeinabox), cd into the jobeinabox directory and type a command
 of the form
 
-    sudo docker build . -t my/jobeinabox --build-arg TZ="Europe/Amsterdam"
+```bash
+docker build -t ruseler/jobeinabox .
+```
+
+resolute
+[["c","15.2.0"],["cpp","15.2.0"],["java","25.0.2"],["nodejs","22.22.0"],["octave","10.3.0"],["pascal","3.2.2"],["php","8.4.11"],["python3","3.13.12"]]
+
 
 You can then run your newly-built image with the command
 

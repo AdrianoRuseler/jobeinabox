@@ -1,0 +1,8 @@
+# A Dockerised Jobe Server
+services:
+  jobe:
+    image: ruseler/jobeinabox:latest
+    #image: trampgeek/jobeinabox:latest
+    restart: always
+    ports:
+      - '4000:80'

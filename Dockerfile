@@ -2,7 +2,12 @@
 # With thanks to David Bowes (d.h.bowes@lancaster.ac.uk) who did all the hard work
 # on this originally.
 
-FROM docker.io/ubuntu:24.04
+#FROM docker.io/ubuntu:24.04
+#FROM ubuntu:latest
+#FROM ubuntu:24.04
+#FROM ubuntu:resolute
+#FROM ubuntu:26.04
+FROM debian:trixie-slim
 
 # https://github.com/opencontainers/image-spec/blob/master/annotations.md
 LABEL \
@@ -12,7 +17,7 @@ LABEL \
     org.opencontainers.image.documentation="https://github.com/trampgeek/jobeinabox" \
     org.opencontainers.image.source="https://github.com/trampgeek/jobeinabox"
 
-ARG TZ=Pacific/Auckland
+ARG TZ=America/Sao_Paulo
 ARG JOBE_VERSION=master
 # Set up the (apache) environment variables
 ENV APACHE_RUN_USER=www-data
