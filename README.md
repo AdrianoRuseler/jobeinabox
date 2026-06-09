@@ -1,12 +1,9 @@
 # JobeInABox
 
-![Docker Stars](https://img.shields.io/docker/stars/trampgeek/jobeinabox.svg)
-![Docker Pulls](https://img.shields.io/docker/pulls/trampgeek/jobeinabox.svg)
-![Docker Automated](https://img.shields.io/docker/cloud/automated/trampgeek/jobeinabox.svg)
-![Docker Build](https://img.shields.io/docker/cloud/build/trampgeek/jobeinabox.svg)
+![Docker Stars](https://img.shields.io/docker/stars/ruseler/jobeinabox.svg)
+![Docker Pulls](https://img.shields.io/docker/pulls/ruseler/jobeinabox.svg)
 
-The [Moodle CodeRunner question type plugin](https://moodle.org/plugins/qtype_coderunner) requires a [Jobe server](https://github.com/trampgeek) on which to run student-submitted jobs. [JobeInABox](https://hub.docker.com/r/trampgeek/jobeinabox/) is a Docker image that provides a basic Jobe server that runs all the standard languages. For full information on Jobe servers, see the 
-[full Jobe documentation](https://github.com/trampgeek/jobe)
+The [Moodle CodeRunner question type plugin](https://moodle.org/plugins/qtype_coderunner) requires a [Jobe server](https://github.com/trampgeek) on which to run student-submitted jobs. [JobeInABox](hub.docker.com/r/ruseler/jobeinabox) is a Docker image that provides a basic Jobe server that runs all the standard languages. For full information on Jobe servers, see the [full Jobe documentation](https://github.com/trampgeek/jobe)
 
 *NOTE: for security and performance reasons it is strongly recommended to run Jobe on a 
 dedicated standalone server, even when running it in a container.*
@@ -20,11 +17,15 @@ There are several ways to build and run a JobeInABox container, for example:
 
 For production use you should build your own image using the local timezone. In this example we use Docker as follows:
 
-Pull [this repo from Github](https://github.com/trampgeek/jobeinabox), cd into the jobeinabox directory and type a command
+Pull [this repo from Github](https://github.com/AdrianoRuseler/jobeinabox), cd into the jobeinabox directory and type a command
 of the form
 
 ```bash
 docker build -t ruseler/jobeinabox .
+```
+
+```bash
+docker build -t ruseler/jobeinabox:latest .
 ```
 
 ```bash
@@ -33,6 +34,9 @@ docker build -t ruseler/jobeinabox:trixie-slim .
 
 resolute
 [["c","15.2.0"],["cpp","15.2.0"],["java","25.0.2"],["nodejs","22.22.0"],["octave","10.3.0"],["pascal","3.2.2"],["php","8.4.11"],["python3","3.13.12"]]
+
+trixie
+[["c","14.2.0"],["cpp","14.2.0"],["java","21.0.11"],["nodejs","20.19.2"],["octave","9.4.0"],["pascal","3.2.2"],["php","8.4.21"],["python3","3.13.5"]]
 
 
 You can then run your newly-built image with the command
@@ -46,7 +50,7 @@ tested locally and used by Moodle as explained in the section "Using jobeinabox"
 
 To run the pre-built Docker Hub image, just enter the command:
 
-    sudo docker run -d -p 4000:80 --name jobe trampgeek/jobeinabox:latest
+    sudo docker run -d -p 4000:80 --name jobe ruseler/jobeinabox:latest
 
 This will give you a jobe server running on port 4000, which can then be
 tested locally and used by Moodle as explained in the section "Using jobeinabox" below.
@@ -84,7 +88,7 @@ Then re-install Jobe (within the container) with the commands:
 You can check the performance of the container with the command
 
 ```bash
-docker exec -it jobeinabox /var/www/html/jobe/testsubmit.py --perf
+docker exec -it jobeinabox python3 /var/www/html/jobe/testsubmit.py --perf
 ```
 
 ## Using API Keys
@@ -120,15 +124,30 @@ can check it's running OK by browsing to
 
 and you should get a JSON-encoded list of the supported languages, namely
 
-FROM debian:trixie-slim
-```json
-[["c","14.2.0"],["cpp","14.2.0"],["java","21.0.10"],["nodejs","20.19.2"],["octave","9.4.0"],["pascal","3.2.2"],["php","8.4.16"],["python3","3.13.5"]]
-```
-
 If you wish to run the test suite within the container, use the command
 
 ```bash
-docker exec -t jobeinabox /usr/bin/python3 /var/www/html/jobe/testsubmit.py
+docker exec -t jobeinabox python3 /var/www/html/jobe/testsubmit.py
+```
+
+```txt
+Supported languages:
+    c: 14.2.0
+    cpp: 14.2.0
+    java: 21.0.11
+    nodejs: 20.19.2
+    octave: 9.4.0
+    pascal: 3.2.2
+    php: 8.4.21
+    python3: 3.13.5
+```
+
+```bash
+docker exec -it jobeinabox /container-test.sh
+```
+
+```bash
+docker exec -t jobeinabox python3 /var/www/html/jobe/minimaltest.py
 ```
 
 To set your Moodle/CodeRunner plugin to use this dockerised Jobe server, set the Jobe server field in the CodeRunner admin settings (Site Administration > Plugins > Question types > CodeRunner) to
@@ -159,13 +178,3 @@ To check if there is anything left, enter the command
 
 1.  Rebuild the container regularly to ensures that it is running
     with the latest jobe version and security updates.
-
-## Change history (recent changes only)
-
-18/10/24:
- * API key configuration can now be specified during build using Docker's "--secret" functionality (thanks @theLogicJB).
-
- * Fix broken documentation on changing the number of Jobe servers.
-
-
-

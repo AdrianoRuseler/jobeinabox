@@ -1,0 +1,73 @@
+Supported languages:
+    c: 14.2.0
+    cpp: 14.2.0
+    java: 21.0.11
+    nodejs: 20.19.2
+    octave: 9.4.0
+    pascal: 3.2.2
+    php: 8.4.21
+    python3: 3.13.5
+
+Valid Python3 OK
+Python3 with stdin OK
+Syntactically invalid Python3 OK
+Python3 runtime error OK
+Python3 file I/O OK
+Testing use of interpreter args with Python3 OK
+Testing use of runargs args with Python3 OK
+Python3 program with customised timeout OK
+Python3 program with support files OK
+Valid Python3/pylint program OK
+Invalid Python3/pylint program OK
+UTF-8 output from Python3 (will fail unless Jobe set up for UTF-8) OK
+Test good C hello world OK
+Test compile error C hello world OK
+Test use of compileargs with C OK
+Test runtime error C hello world OK
+Test timelimit on C OK
+Test outputlimit on C OK
+Memory limit exceeded in C (seg faults) OK
+Infinite recursion (stack error) on C OK
+C program controlled forking OK
+A C program with ASCII non-UTF-8-compatible output OK
+Valid Octave OK
+octave with stdin OK
+Syntactically invalid Octave (treated as runtime error) OK
+Syntactically valid Nodejs hello world OK
+Syntactically invalid Nodejs OK
+Correct Php program  OK
+Syntactically incorrect Php program  OK
+Correct Java program  OK
+Correct Java program without supplied sourcefilename  OK
+Syntactically incorrect Java program  OK
+Java program with a support class (.java) OK
+Java program with Unicode output (will fail unless Jobe set up for UTF-8)  OK
+Test good C++ hello world OK
+Test compile error C++ hello world OK
+Good Hello world Pascal test OK
+Fail Hello world Pascal test OK
+
+Checking serious error conditions
+Check 404 response when run requires a file that was not PUT. OK
+Check 400 response: non-existent language OK
+Check 400 response: missing language_id OK
+Check 400 response: missing sourcecode OK
+Testing overload exception OK
+
+43 tests, 43 passed, 0 failed, 0 exceptions
+
+Checking parallel submissions in C
+Test good C hello world OK
+Test good C hello world OK
+Test good C hello world OK
+Test good C hello world OK
+Test good C hello world OK
+Test good C hello world OK
+Test good C hello world OK
+Test good C hello world OK
+Test good C hello world OK
+Test good C hello world OK
+All done
+
+Testing a submission with an excessive cputime parameter
+OK
