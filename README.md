@@ -29,7 +29,11 @@ docker build -t ruseler/jobeinabox:latest .
 ```
 
 ```bash
-docker build -t ruseler/jobeinabox:trixie-slim .
+docker build -t ruseler/jobeinabox:debian-slim .
+```
+
+```bash
+docker build -t ruseler/jobeinabox:ubuntu .
 ```
 
 resolute

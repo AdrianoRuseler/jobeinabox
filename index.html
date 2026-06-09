@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jobe — Code Execution Server</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0D1117;
+      --bg-card:     #161B22;
+      --bg-inset:    #0D1117;
+      --border:      #30363D;
+      --text:        #E6EDF3;
+      --text-muted:  #8B949E;
+      --accent:      #58A6FF;
+      --accent-dim:  #1F3A5F;
+      --green:       #3FB950;
+      --green-dim:   #1A3825;
+      --yellow:      #D29922;
+      --yellow-dim:  #2D2208;
+      --red:         #F85149;
+      --red-dim:     #3D1A1A;
+      --font-ui:     'Inter', system-ui, sans-serif;
+      --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    html { font-size: 15px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ── */
+    .page { max-width: 900px; margin: 0 auto; padding: 0 24px 64px; }
+
+    /* ── Header ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 32px 0 28px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .wordmark {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .wordmark-icon {
+      width: 36px; height: 36px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .wordmark-text h1 {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .wordmark-text p {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+
+    /* ── Status pill ── */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .status-pill.ok   { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+    .status-pill.ok   .status-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-pill.err  { border-color: var(--red);   color: var(--red);   background: var(--red-dim);  }
+    .status-pill.err  .status-dot { background: var(--red); }
+    .status-pill.busy { border-color: var(--yellow); color: var(--yellow); background: var(--yellow-dim); }
+    .status-pill.busy .status-dot { background: var(--yellow); }
+
+    /* ── Section titles ── */
+    .section { margin-top: 40px; }
+
+    .section-label {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+    }
+
+    /* ── Language table ── */
+    .lang-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .lang-card {
+      background: var(--bg-card);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .lang-name {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .lang-version {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .lang-loading {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 24px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    /* ── Info cards ── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    @media (max-width: 560px) {
+      .info-grid { grid-template-columns: 1fr; }
+    }
+
+    .info-card {
+      background: var(--bg-card);
+      padding: 18px 20px;
+    }
+
+    .info-card dt {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .info-card dd {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text);
+      word-break: break-all;
+    }
+
+    /* ── API reference ── */
+    .api-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .api-table th {
+      background: var(--bg-card);
+      padding: 10px 14px;
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .api-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .api-table tr:last-child td { border-bottom: none; }
+
+    .api-table tr:nth-child(even) td { background: var(--bg-card); }
+
+    .method {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 6px;
+      display: inline-block;
+    }
+
+    .method.get  { color: var(--green);  background: var(--green-dim);  }
+    .method.post { color: var(--accent); background: var(--accent-dim); }
+    .method.put  { color: var(--yellow); background: var(--yellow-dim); }
+
+    .endpoint {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    /* ── Code block ── */
+    .code-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      padding: 16px 18px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text);
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    .code-comment { color: var(--text-muted); }
+    .code-key     { color: var(--accent); }
+    .code-str     { color: var(--green); }
+    .code-num     { color: var(--yellow); }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 56px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    footer p {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover { text-decoration: underline; }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="wordmark">
+      <div class="wordmark-icon">&gt;_</div>
+      <div class="wordmark-text">
+        <h1>Jobe Server</h1>
+        <p>Job Execution Engine</p>
+      </div>
+    </div>
+    <div id="status-pill" class="status-pill busy">
+      <span class="status-dot"></span>
+      <span id="status-text">checking…</span>
+    </div>
+  </header>
+
+  <!-- Server info -->
+  <section class="section">
+    <p class="section-label">Server</p>
+    <dl class="info-grid">
+      <div class="info-card">
+        <dt>Endpoint</dt>
+        <dd id="info-endpoint">—</dd>
+      </div>
+      <div class="info-card">
+        <dt>API Version</dt>
+        <dd>v0.9</dd>
+      </div>
+      <div class="info-card">
+        <dt>Authentication</dt>
+        <dd id="info-auth">—</dd>
+      </div>
+      <div class="info-card">
+        <dt>Source</dt>
+        <dd><a href="https://github.com/trampgeek/jobe" style="color:var(--accent);text-decoration:none;">github.com/trampgeek/jobe</a></dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- Languages -->
+  <section class="section">
+    <p class="section-label">Supported Languages</p>
+    <div id="lang-container">
+      <div class="lang-loading">fetching language list…</div>
+    </div>
+  </section>
+
+  <!-- API quick reference -->
+  <section class="section">
+    <p class="section-label">API Quick Reference</p>
+    <table class="api-table">
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>Endpoint</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="method get">GET</span></td>
+          <td class="endpoint">/jobe/index.php/restapi/languages</td>
+          <td>List supported languages and versions</td>
+        </tr>
+        <tr>
+          <td><span class="method post">POST</span></td>
+          <td class="endpoint">/jobe/index.php/runs</td>
+          <td>Submit a job for execution</td>
+        </tr>
+        <tr>
+          <td><span class="method put">PUT</span></td>
+          <td class="endpoint">/jobe/index.php/files/{id}</td>
+          <td>Upload a support file</td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span></td>
+          <td class="endpoint">/jobe/index.php/files/{id}</td>
+          <td>Check a file exists (HEAD also supported)</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Example payload -->
+  <section class="section">
+    <p class="section-label">Example — Submit a Python3 Job</p>
+    <div class="code-block"><span class="code-comment">// POST /jobe/index.php/runs</span>
+{
+  <span class="code-key">"run_spec"</span>: {
+    <span class="code-key">"language_id"</span>: <span class="code-str">"python3"</span>,
+    <span class="code-key">"sourcecode"</span>: <span class="code-str">"print('Hello, Jobe!')"</span>,
+    <span class="code-key">"sourcefilename"</span>: <span class="code-str">"hello.py"</span>
+  }
+}
+
+<span class="code-comment">// Response (outcome 15 = success)</span>
+{
+  <span class="code-key">"run_id"</span>: <span class="code-str">null</span>,
+  <span class="code-key">"outcome"</span>: <span class="code-num">15</span>,
+  <span class="code-key">"stdout"</span>: <span class="code-str">"Hello, Jobe!\n"</span>,
+  <span class="code-key">"stderr"</span>: <span class="code-str">""</span>,
+  <span class="code-key">"cmpinfo"</span>: <span class="code-str">""</span>
+}</div>
+  </section>
+
+  <!-- Outcome codes -->
+  <section class="section">
+    <p class="section-label">Outcome Codes</p>
+    <table class="api-table">
+      <thead>
+        <tr><th>Code</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="endpoint">11</td><td>Compile error</td></tr>
+        <tr><td class="endpoint">12</td><td>Runtime error</td></tr>
+        <tr><td class="endpoint">13</td><td>Time limit exceeded</td></tr>
+        <tr><td class="endpoint">15</td><td>Successful run</td></tr>
+        <tr><td class="endpoint">17</td><td>Memory limit exceeded</td></tr>
+        <tr><td class="endpoint">19</td><td>Illegal system call</td></tr>
+        <tr><td class="endpoint">20</td><td>Internal error</td></tr>
+        <tr><td class="endpoint">21</td><td>Server overload</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    <p>Jobe · Job Execution Engine · <a href="https://github.com/trampgeek/jobe">trampgeek/jobe</a></p>
+    <p id="footer-time"></p>
+  </footer>
+
+</div>
+
+<script>
+  // Populate server endpoint
+  document.getElementById('info-endpoint').textContent = window.location.origin + '/jobe/index.php';
+
+  // Footer timestamp
+  document.getElementById('footer-time').textContent = new Date().toUTCString();
+
+  // Fetch languages and health status
+  async function probe() {
+    const pill = document.getElementById('status-pill');
+    const pillText = document.getElementById('status-text');
+    const container = document.getElementById('lang-container');
+    const authCard = document.getElementById('info-auth');
+
+    try {
+      const res = await fetch('/jobe/index.php/restapi/languages');
+
+      if (res.status === 401 || res.status === 403) {
+        pill.className = 'status-pill busy';
+        pillText.textContent = 'API key required';
+        authCard.textContent = 'Required (API key)';
+        container.innerHTML = '<div class="lang-loading">Authentication required — configure X-API-KEY header</div>';
+        return;
+      }
+
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+
+      const langs = await res.json();
+      authCard.textContent = 'None (open access)';
+
+      if (!langs || langs.length === 0) {
+        container.innerHTML = '<div class="lang-loading">No languages reported</div>';
+        pill.className = 'status-pill err';
+        pillText.textContent = 'no languages';
+        return;
+      }
+
+      // Build language grid
+      const grid = document.createElement('div');
+      grid.className = 'lang-grid';
+      langs.forEach(function(lang) {
+        const card = document.createElement('div');
+        card.className = 'lang-card';
+        card.innerHTML =
+          '<span class="lang-name">' + esc(lang[0]) + '</span>' +
+          '<span class="lang-version">' + esc(lang[1]) + '</span>';
+        grid.appendChild(card);
+      });
+      container.innerHTML = '';
+      container.appendChild(grid);
+
+      pill.className = 'status-pill ok';
+      pillText.textContent = 'online · ' + langs.length + ' language' + (langs.length !== 1 ? 's' : '');
+
+    } catch (e) {
+      pill.className = 'status-pill err';
+      pillText.textContent = 'unreachable';
+      container.innerHTML = '<div class="lang-loading">Could not reach /jobe/index.php/restapi/languages — ' + esc(e.message) + '</div>';
+      document.getElementById('info-auth').textContent = '—';
+    }
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  probe();
+</script>
+</body>
+</html>

@@ -1,15 +1,6 @@
-# Jobe-in-a-box: a Dockerised Jobe server (see https://github.com/trampgeek/jobe)
-# With thanks to David Bowes (d.h.bowes@lancaster.ac.uk) who did all the hard work
-# on this originally.
+# Jobe-in-a-box: a Dockerised Jobe server
+FROM debian:stable-slim
 
-#FROM docker.io/ubuntu:24.04
-#FROM ubuntu:latest
-#FROM ubuntu:24.04
-#FROM ubuntu:resolute
-#FROM ubuntu:26.04
-FROM debian:trixie-slim
-
-# https://github.com/opencontainers/image-spec/blob/master/annotations.md
 LABEL \
     org.opencontainers.image.authors="richard.lobb@canterbury.ac.nz,j.hoedjes@hva.nl,d.h.bowes@herts.ac.uk" \
     org.opencontainers.image.title="JobeInABox" \
@@ -19,32 +10,22 @@ LABEL \
 
 ARG TZ=America/Sao_Paulo
 ARG JOBE_VERSION=master
-# Set up the (apache) environment variables
-ENV APACHE_RUN_USER=www-data
-ENV APACHE_RUN_GROUP=www-data
-ENV APACHE_LOG_DIR=/var/log/apache2
-ENV APACHE_LOCK_DIR=/var/lock/apache2
-ENV APACHE_PID_FILE=/var/run/apache2.pid
-ENV LANG=C.UTF-8
 
-# Copy apache virtual host file for later use
+# Set up Apache environment variables
+ENV APACHE_RUN_USER=www-data \
+    APACHE_RUN_GROUP=www-data \
+    APACHE_LOG_DIR=/var/log/apache2 \
+    APACHE_LOCK_DIR=/var/lock/apache2 \
+    APACHE_PID_FILE=/var/run/apache2.pid \
+    LANG=C.UTF-8
+
+# Copy configuration files early
 COPY 000-jobe.conf /
-# Copy test script
 COPY container-test.sh /
+COPY index.html /
 
-# Mount secrets
-# Set timezone
-# Install extra packages
-# Redirect apache logs to stdout
-# Configure apache
-# Configure php
-# Get jobe
-# Handle jobe API keys
-# Install jobe
-# Clean up
-RUN --mount=type=secret,id=api_keys \
-    export API_KEYS=`cat /run/secrets/api_keys | tr '\n' ' '` && \
-    ln -snf /usr/share/zoneinfo/"$TZ" /etc/localtime && \
+# Layer 1: Install system packages (Changes infrequently -> Heavily cached)
+RUN ln -snf /usr/share/zoneinfo/"$TZ" /etc/localtime && \
     echo "$TZ" > /etc/timezone && \
     apt-get update && \
     apt-get --no-install-recommends install -yq \
@@ -71,39 +52,53 @@ RUN --mount=type=secret,id=api_keys \
         tzdata \
         unzip && \
     pylint --reports=no --score=n --generate-rcfile > /etc/pylintrc && \
-    ln -sf /proc/self/fd/1 /var/log/apache2/access.log && \
-    ln -sf /proc/self/fd/1 /var/log/apache2/error.log && \
-    sed -i "s/export LANG=C/export LANG=$LANG/" /etc/apache2/envvars && \
-    sed -i '1 i ServerName localhost' /etc/apache2/apache2.conf && \
-    sed -i 's/ServerTokens\ OS/ServerTokens \Prod/g' /etc/apache2/conf-enabled/security.conf && \
-    sed -i 's/ServerSignature\ On/ServerSignature \Off/g' /etc/apache2/conf-enabled/security.conf && \
-    rm /etc/apache2/sites-enabled/000-default.conf && \
-    mv /000-jobe.conf /etc/apache2/sites-enabled/ && \
-    mkdir -p /var/crash && \
-    chmod 777 /var/crash && \
-    echo '<!DOCTYPE html><html lang="en"><title>Jobe</title><h1>Jobe</h1></html>' > /var/www/html/index.html && \
-    git clone --single-branch --branch ${JOBE_VERSION} https://github.com/trampgeek/jobe.git /var/www/html/jobe && \
-    apache2ctl start && \
-    cd /var/www/html/jobe && \
-    if [ ! -z "${API_KEYS}" ]; then \
-        sed -i 's/$require_api_keys = false/$require_api_keys = true/' /var/www/html/jobe/app/Config/Jobe.php && \
-        sed -i "s/'2AAA7A.*/$API_KEYS/" /var/www/html/jobe/app/Config/Jobe.php \
-    ; fi && \
-    /usr/bin/python3 /var/www/html/jobe/install --max_uid=500 && \
-    chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} /var/www/html && \
     apt-get -y autoremove --purge && \
     apt-get -y clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Expose apache
+# Layer 2: Configure Apache & Fetch Jobe (Uses secrets securely)
+RUN --mount=type=secret,id=api_keys \
+    # Redirect Apache logs to stdout/stderr
+    ln -sf /proc/self/fd/1 /var/log/apache2/access.log && \
+    ln -sf /proc/self/fd/1 /var/log/apache2/error.log && \
+    # Apache Setup
+    sed -i "s/export LANG=C/export LANG=$LANG/" /etc/apache2/envvars && \
+    sed -i '1 i ServerName localhost' /etc/apache2/apache2.conf && \
+    sed -i 's/ServerTokens\ OS/ServerTokens \Prod/g' /etc/apache2/conf-enabled/security.conf && \
+    sed -i 's/ServerSignature\ On/ServerSignature \Off/g' /etc/apache2/conf-enabled/security.conf && \
+    rm -f /etc/apache2/sites-enabled/000-default.conf && \
+    mv /000-jobe.conf /etc/apache2/sites-enabled/ && \
+    # Web Directory Setup
+    mkdir -p /var/crash && \
+    chmod 755 /var/crash && \
+    chown ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} /var/crash && \
+    mv /index.html /var/www/html/index.html && \
+    # Clone Jobe
+    git clone --depth=1 --single-branch --branch ${JOBE_VERSION} \
+        https://github.com/trampgeek/jobe.git /var/www/html/jobe && \
+    rm -rf /var/www/html/jobe/.git && \
+    cd /var/www/html/jobe && \
+    # FIX 1: read secret safely; 2>/dev/null prevents fatal error when
+    # no secret file is provided at build time
+    API_KEYS=$(cat /run/secrets/api_keys 2>/dev/null | tr '\n' ' ') && \
+    if [ -n "${API_KEYS}" ]; then \
+        sed -i 's/\$require_api_keys = false/\$require_api_keys = true/' \
+            /var/www/html/jobe/app/Config/Jobe.php && \
+        perl -i -pe "s|'2AAA7A.*|${API_KEYS}|" \
+            /var/www/html/jobe/app/Config/Jobe.php \
+    ; fi && \
+    # FIX 2: jobe/install probes for the www-data process to find the
+    # web server uid, so Apache must be running during install.
+    # Start it, install, then stop cleanly to avoid stale PID in image.
+    apache2ctl start && \
+    /usr/bin/python3 /var/www/html/jobe/install --max_uid=500 && \
+    apache2ctl stop && \
+    rm -f ${APACHE_PID_FILE} && \
+    chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} /var/www/html
+
 EXPOSE 80
 
-# Healthcheck every minute, minimaltest.py should complete within 2 seconds
-# If you're running docker version 25.0 or later, you could consider
-# changing the following line to
-# HEALTHCHECK --start-period=30s --start-interval=5s --interval=5m --timeout=2s \
 HEALTHCHECK --interval=1m --timeout=2s \
     CMD /usr/bin/python3 /var/www/html/jobe/minimaltest.py || exit 1
 
-# Start apache
 CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]

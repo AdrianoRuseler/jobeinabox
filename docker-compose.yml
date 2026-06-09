@@ -1,8 +1,8 @@
 # A Dockerised Jobe Server
 services:
   jobe:
-    image: ruseler/jobeinabox:latest
-    #image: trampgeek/jobeinabox:latest
+    #image: ruseler/jobeinabox:ubuntu
+    image: ruseler/jobeinabox:debian-slim
     container_name: jobeinabox
     restart: always
     ports:
