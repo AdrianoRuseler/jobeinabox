@@ -1,6 +1,5 @@
 # Jobe-in-a-box: a Dockerised Jobe server
-FROM debian:stable-slim
-
+FROM ubuntu:26.04
 LABEL \
     org.opencontainers.image.authors="richard.lobb@canterbury.ac.nz,j.hoedjes@hva.nl,d.h.bowes@herts.ac.uk" \
     org.opencontainers.image.title="JobeInABox" \
@@ -17,13 +16,12 @@ ENV APACHE_RUN_USER=www-data \
     APACHE_LOG_DIR=/var/log/apache2 \
     APACHE_LOCK_DIR=/var/lock/apache2 \
     APACHE_PID_FILE=/var/run/apache2.pid \
-    LANG=C.UTF-8
+    LANG=C.UTF-8 \
+    # CHANGED: Required on Ubuntu to suppress interactive apt prompts
+    DEBIAN_FRONTEND=noninteractive
 
-# Copy configuration files early
-COPY 000-jobe.conf /
-COPY container-test.sh /
-COPY index.html /
-
+# Copy configuration files after the heavy apt layer so config edits
+# don't invalidate the package cache.  (moved from top)
 # Layer 1: Install system packages (Changes infrequently -> Heavily cached)
 RUN ln -snf /usr/share/zoneinfo/"$TZ" /etc/localtime && \
     echo "$TZ" > /etc/timezone && \
@@ -35,9 +33,11 @@ RUN ln -snf /usr/share/zoneinfo/"$TZ" /etc/localtime && \
         fp-compiler \
         git \
         libapache2-mod-php \
-        nano \
+        # CHANGED: ubuntu:26.04 ships nodejs 20+; explicit version pin
+        # removed so apt picks the distro default (no PPA needed)
         nodejs \
         octave \
+        # CHANGED: pulls OpenJDK 25 on Ubuntu 26.04 (was 21 on 24.04)
         default-jdk \
         php \
         php-cli \
@@ -55,6 +55,11 @@ RUN ln -snf /usr/share/zoneinfo/"$TZ" /etc/localtime && \
     apt-get -y autoremove --purge && \
     apt-get -y clean && \
     rm -rf /var/lib/apt/lists/*
+
+# CHANGED: COPY moved here so edits to config files don't bust the apt cache above
+COPY 000-jobe.conf /
+COPY container-test.sh /
+COPY index.html /
 
 # Layer 2: Configure Apache & Fetch Jobe (Uses secrets securely)
 RUN --mount=type=secret,id=api_keys \
@@ -95,6 +100,19 @@ RUN --mount=type=secret,id=api_keys \
     apache2ctl stop && \
     rm -f ${APACHE_PID_FILE} && \
     chown -R ${APACHE_RUN_USER}:${APACHE_RUN_GROUP} /var/www/html
+
+# Layer 3: Fix language version detection regressions on Ubuntu 26.04
+RUN \
+    # Java: OpenJDK 25 no longer defaults stdout to UTF-8
+    sed -i \
+        "s|public string \$java_extraflags = '';|public string \$java_extraflags = '-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8';|" \
+        /var/www/html/jobe/app/Config/Jobe.php && \
+    # Octave: Ubuntu 26.04 changed version string to include arch tuple:
+    #   old: "GNU Octave, version 8.x"
+    #   new: "GNU Octave (x86_64-pc-linux-gnu) version 11.x"
+    sed -i \
+        's|GNU Octave, version (\[0-9._\]\*)|GNU Octave[^0-9]*([0-9][0-9._]*)|' \
+        /var/www/html/jobe/app/Libraries/OctaveTask.php
 
 EXPOSE 80
 

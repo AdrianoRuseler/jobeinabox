@@ -8,6 +8,14 @@ The [Moodle CodeRunner question type plugin](https://moodle.org/plugins/qtype_co
 *NOTE: for security and performance reasons it is strongly recommended to run Jobe on a 
 dedicated standalone server, even when running it in a container.*
 
+## CodeRunner
+
+A question type that allows question authors to set programming questions in which the student answer is code in some programming language, which is graded by running it. More generally it can handle any question to which the answer is text that can be graded by a computer program written by the question author.
+
+- https://trampgeek.github.io/moodle-qtype_coderunner/
+- https://coderunner.org.nz/
+- https://moodle.org/plugins/stats.php?plugin=qtype_coderunner
+  
 ## Building and running your own image locally (strongly recommended)
 
 There are several ways to build and run a JobeInABox container, for example:
@@ -23,6 +31,7 @@ of the form
 ```bash
 docker build -t ruseler/jobeinabox .
 ```
+- jobebian
 
 ```bash
 docker build -t ruseler/jobeinabox:latest .
@@ -31,17 +40,11 @@ docker build -t ruseler/jobeinabox:latest .
 ```bash
 docker build -t ruseler/jobeinabox:debian-slim .
 ```
+- jobuntu
 
 ```bash
 docker build -t ruseler/jobeinabox:ubuntu .
 ```
-
-resolute
-[["c","15.2.0"],["cpp","15.2.0"],["java","25.0.2"],["nodejs","22.22.0"],["octave","10.3.0"],["pascal","3.2.2"],["php","8.4.11"],["python3","3.13.12"]]
-
-trixie
-[["c","14.2.0"],["cpp","14.2.0"],["java","21.0.11"],["nodejs","20.19.2"],["octave","9.4.0"],["pascal","3.2.2"],["php","8.4.21"],["python3","3.13.5"]]
-
 
 You can then run your newly-built image with the command
 
