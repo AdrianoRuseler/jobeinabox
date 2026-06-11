@@ -129,6 +129,8 @@ can check it's running OK by browsing to
 
 and you should get a JSON-encoded list of the supported languages, namely
 
+curl -k -X GET http://host.docker.internal:4000/jobe/index.php/restapi/languages
+
 If you wish to run the test suite within the container, use the command
 
 ```bash
@@ -183,3 +185,19 @@ To check if there is anything left, enter the command
 
 1.  Rebuild the container regularly to ensures that it is running
     with the latest jobe version and security updates.
+
+
+## Localhost use
+
+Under /admin/settings.php?section=qtypesettingcoderunner
+
+Jobe server qtype_coderunner | jobe_host
+Add host.docker.internal:4000
+
+Under /admin/settings.php?section=httpsecurity
+
+- cURL blocked hosts list | curlsecurityblockedhosts
+Remove all internal IPs
+
+- Add port 4000 to cURL allowed ports list 
+cURL allowed ports list | curlsecurityallowedport
