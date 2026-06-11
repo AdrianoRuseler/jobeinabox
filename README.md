@@ -125,6 +125,7 @@ Having started a jobeinabox container by either of the above methods, you
 can check it's running OK by browsing to
 
 - http://[host_running_docker]:4000/jobe/index.php/restapi/languages
+- http://host.docker.internal:4000/jobe/index.php/restapi/languages
 
 and you should get a JSON-encoded list of the supported languages, namely
 
